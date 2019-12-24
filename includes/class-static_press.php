@@ -497,8 +497,8 @@ CREATE TABLE `{$this->url_table}` (
 			$home_url .= ':'.$parsed['port'];
 
 		$pattern  = array(
-			'# (href|src|srcset|action)="(/[^"]*)"#ism',
-			"# (href|src|srcset|action)='(/[^']*)'#ism",
+			'# (href|src|srcset|action)="(/[^/][^"]*)"#ism',
+			"# (href|src|srcset|action)='(/[^/][^']*)'#ism",
 		);
 		$content = preg_replace($pattern, ' $1="'.$home_url.'$2"', $content);
 

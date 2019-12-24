@@ -559,16 +559,21 @@ class Static_Press_Test extends \WP_UnitTestCase {
 	/**
 	 * Function replace_relative_URI() should replace site URL to the static URL.
 	 * Function replace_relative_URI() should replace relative path in the attributes to the static path.
+	 * Function replace_relative_URI() should not replace external URL starts with "//".
 	 */
 	public function provider_replace_relative_URI() {
 		return array(
 			array(
 				'http://example.org/foo/bar/',
-				'http://example.org/static/foo/bar/'
+				'http://example.org/static/foo/bar/',
 			),
 			array(
 				'<a href="/foo/bar/"></a>',
-				'<a href="/static/foo/bar/"></a>'
+				'<a href="/static/foo/bar/"></a>',
+			),
+			array(
+				'<a href="//example.test/foo/bar/"></a>',
+				'<a href="//example.test/foo/bar/"></a>',
 			),
 		);
 	}
