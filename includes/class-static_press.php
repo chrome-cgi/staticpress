@@ -245,7 +245,15 @@ CREATE TABLE `{$this->url_table}` (
 		$static_file = $this->create_static_file($this->get_site_url().'404.html');
 		$this->fetch_finalyze();
 
-		$result = array('result' => true);
+		$result = array(
+			'result' => true,
+			'static_url' => $this->static_url,
+			'static_dir' => $this->static_dir,
+			'last_modified' => date('Y-m-d H:i:s')
+		);
+
+		do_action('StaticPress::done_finalize', $result);
+
 		$this->json_output(apply_filters('StaticPress::ajax_finalyze', $result));
 	}
 
