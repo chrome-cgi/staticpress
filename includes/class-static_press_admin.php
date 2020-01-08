@@ -312,7 +312,12 @@ jQuery(function($){
 							ul.append('<li>' + file_count + ' : ' + this.static + '</li>');
 						}
 					});
-					$('html,body').animate({scrollTop: $('li:last-child', ul).offset().top},'slow');
+
+					var $lastChild = $('li:last-child', ul);
+					if ($lastChild.length > 0) {
+						$('html,body').animate({scrollTop: $lastChild.offset().top},'slow');
+					}
+
 					if (response.final)
 						static_press_finalyze();
 					else
