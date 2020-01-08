@@ -180,7 +180,14 @@ class static_press_admin {
                         }else{
                                 update_option(self::OPTION_STATIC_TIMEOUT, $timeout);
                                 $this->timeout    = $timeout;
-                        }
+						}
+						if (is_wp_error($basic_usr) || is_wp_error($basic_pwd)) {
+							$e->add('error', $basic_usr->get_error_messages());
+							$e->add('error', $basic_pwd->get_error_messages());
+						} else {
+							update_option(self::OPTION_STATIC_BASIC, $basic_auth);
+							$this->basic_auth = $basic_auth;
+						}
 
                         if ($e->get_error_code()){
                                 $errors = $e->get_error_messages('error');
