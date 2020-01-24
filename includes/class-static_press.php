@@ -359,15 +359,10 @@ CREATE TABLE `{$this->url_table}` (
 	}
 
 	// make subdirectries
-	private function make_subdirectories($file){
-		$dir_sep = $subdir = $this->dir_sep();
-		$directories = explode($dir_sep, dirname($file));
-		foreach ($directories as $dir){
-			if (empty($dir))
-				continue;
-			$subdir .= trailingslashit($dir);
-			if (!file_exists($subdir))
-				mkdir($subdir, 0755);
+	private function make_subdirectories($file, $permissions = 0755) {
+		$dir = dirname($file);
+		if (!file_exists($dir)) {
+			mkdir($dir, $permissions, true);
 		}
 	}
 
