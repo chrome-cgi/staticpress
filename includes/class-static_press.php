@@ -545,6 +545,56 @@ CREATE TABLE `{$this->url_table}` (
 		return $this->update_url($urls);
 	}
 
+	function default_filter_update_url($url) {
+		if (preg_match('#\.php$#i', $url['url'])) {
+			$url['enable'] = 0;
+		} else if (preg_match('#\?[^=]+[=]?#i', $url['url'])) {
+			$url['enable'] = 0;
+		} else if (preg_match('#/wp-admin/$#i', $url['url'])) {
+			$url['enable'] = 0;
+		} else if (isset($url['type']) && $url['type'] == 'static_file') {
+			$plugin_dir  = trailingslashit(str_replace(ABSPATH, '/', WP_PLUGIN_DIR));
+			$theme_dir   = trailingslashit(str_replace(ABSPATH, '/', WP_CONTENT_DIR) . '/themes');
+			$file_source = untrailingslashit(ABSPATH) . $url['url'];
+			$file_dest   = untrailingslashit($this->static_dir) . $url['url'];
+			$pattern     = '#^(/(readme|readme-[^\.]+|license)\.(txt|html?)|('.preg_quote($plugin_dir).'|'.preg_quote($theme_dir).').*/((readme|changelog|license)\.(txt|html?)|(screenshot|screenshot-[0-9]+)\.(png|jpe?g|gif)))$#i';
+			if ($file_source === $file_dest) {
+				$url['enable'] = 0;
+			} else if (preg_match($pattern, $url['url'])) {
+				$url['enable'] = 0;
+			} else if (!file_exists($file_source)) {
+				$url['enable'] = 0;
+			} else if (!file_exists($file_dest))  {
+				$url['enable'] = 1;
+			} else if (filemtime($file_source) <= filemtime($file_dest)) {
+				$url['enable'] = 0;
+			}
+
+			if ($url['enable'] == 1) {
+				if (preg_match('#^'.preg_quote($plugin_dir).'#i', $url['url'])){
+					$url['enable'] = 0;
+					$active_plugins = get_option('active_plugins');
+					foreach ($active_plugins as $active_plugin) {
+						$active_plugin = trailingslashit($plugin_dir . dirname($active_plugin));
+						if ($active_plugin == trailingslashit($plugin_dir . '.'))
+							continue;
+						if (preg_match('#^'.preg_quote($active_plugin).'#i', $url['url'])) {
+							$url['enable'] = 1;
+							break;
+						}
+					}
+				} else if (preg_match('#^'.preg_quote($theme_dir).'#i', $url['url'])) {
+					$url['enable'] = 0;
+					$current_theme = trailingslashit($theme_dir . get_stylesheet());
+					if (preg_match('#^'.preg_quote($current_theme).'#i', $url['url'])) {
+						$url['enable'] = 1;
+					}
+				}
+			}
+		}
+		return $url;
+	}
+
 	private function update_url($urls){
 		global $wpdb;
 
@@ -556,52 +606,7 @@ CREATE TABLE `{$this->url_table}` (
 				$url['url']);
 
 			$url['enable'] = 1;
-			if (preg_match('#\.php$#i', $url['url'])) {
-				$url['enable'] = 0;
-			} else if (preg_match('#\?[^=]+[=]?#i', $url['url'])) {
-				$url['enable'] = 0;
-			} else if (preg_match('#/wp-admin/$#i', $url['url'])) {
-				$url['enable'] = 0;
-			} else if (isset($url['type']) && $url['type'] == 'static_file') {
-				$plugin_dir  = trailingslashit(str_replace(ABSPATH, '/', WP_PLUGIN_DIR));
-				$theme_dir   = trailingslashit(str_replace(ABSPATH, '/', WP_CONTENT_DIR) . '/themes');
-				$file_source = untrailingslashit(ABSPATH) . $url['url'];
-				$file_dest   = untrailingslashit($this->static_dir) . $url['url'];
-				$pattern     = '#^(/(readme|readme-[^\.]+|license)\.(txt|html?)|('.preg_quote($plugin_dir).'|'.preg_quote($theme_dir).').*/((readme|changelog|license)\.(txt|html?)|(screenshot|screenshot-[0-9]+)\.(png|jpe?g|gif)))$#i';
-				if ($file_source === $file_dest) {
-					$url['enable'] = 0;
-				} else if (preg_match($pattern, $url['url'])) {
-					$url['enable'] = 0;
-				} else if (!file_exists($file_source)) {
-					$url['enable'] = 0;
-				} else if (!file_exists($file_dest))  {
-					$url['enable'] = 1;
-				} else if (filemtime($file_source) <= filemtime($file_dest)) {
-					$url['enable'] = 0;
-				}
-
-				if ($url['enable'] == 1) {
-					if (preg_match('#^'.preg_quote($plugin_dir).'#i', $url['url'])){
-						$url['enable'] = 0;
-						$active_plugins = get_option('active_plugins');
-						foreach ($active_plugins as $active_plugin) {
-							$active_plugin = trailingslashit($plugin_dir . dirname($active_plugin));
-							if ($active_plugin == trailingslashit($plugin_dir . '.'))
-								continue;
-							if (preg_match('#^'.preg_quote($active_plugin).'#i', $url['url'])) {
-								$url['enable'] = 1;
-								break;
-							}
-						}
-					} else if (preg_match('#^'.preg_quote($theme_dir).'#i', $url['url'])) {
-						$url['enable'] = 0;
-						$current_theme = trailingslashit($theme_dir . get_stylesheet());
-						if (preg_match('#^'.preg_quote($current_theme).'#i', $url['url'])) {
-							$url['enable'] = 1;
-						}
-					}
-				}
-			}
+			$url = apply_filters('StaticPress::filter_update_url', $url);
 
 			if ($id = $wpdb->get_var($sql)){
 				$sql = "update {$this->url_table}";
